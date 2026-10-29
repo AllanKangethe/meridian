@@ -1,0 +1,6 @@
+# this keeps junk and secrets out of the image:
+.venv/
+.env
+.git/
+__pycache__/
+*.pyc
