@@ -1,6 +1,8 @@
 import os
 
 from fastapi import FastAPI, Response
+from fastapi.staticfiles import StaticFiles
+
 from sqlalchemy import create_engine, text
 
 DATABASE_URL = (
@@ -22,3 +24,5 @@ def health(response: Response):
         response.status_code = 503
         return {"status": "error", "database": "unreachable"}
     return {"status": "ok", "database": "ok"}
+
+app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
