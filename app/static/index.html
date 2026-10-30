@@ -1,12 +1,35 @@
 <!DOCTYPE html>
-<html>
-    <body>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Meridian</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        .ok { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Meridian</h1>
+    <p>API status: <span id="status">checking…</span></p>
 
+    <script>
+        async function checkHealth() {
+            const el = document.getElementById("status");
+            try {
+                const res = await fetch("/health");
+                const data = await res.json();
+                el.textContent = `${data.status} (database: ${data.database})`;
+                el.className = res.ok ? "ok" : "error";
+            } catch (err) {
+                el.textContent = "API unreachable";
+                el.className = "error";
+            }
+        }
 
-        <p stlye="
-        color: blue;
-        font-size:50px">Welcome page</p>
-
-
-    </body>
+        checkHealth();
+        setInterval(checkHealth, 5000);
+    </script>
+</body>
 </html>
