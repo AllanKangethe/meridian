@@ -24,5 +24,15 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  worker:
+    build: .
+    env_file: .env
+    depends_on:
+      - db
+    command: python -m app.worker
+    volumes:
+      - ./app:/app/app
+
+
 volumes:
   pgdata:

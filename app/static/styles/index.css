@@ -1,0 +1,64 @@
+:root {
+    --bg: #18181b;
+    
+    --header-text: #d9f2f4;
+    --header-bg: #1a1a19;
+    --border: #2e2e33;
+}
+
+body
+{
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+}
+
+p
+{
+    margin: 0;
+}
+
+.site-header
+{
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    gap: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--border);
+    font-size: 25px;
+    
+}
+
+.brand
+{
+    display: flex;
+    column-gap: 1rem;
+    align-items: center;
+    text-decoration: none;
+    color: var(--header-text);
+
+}
+
+
+.brand-icon
+{
+    height: 35px;
+}
+
+.nav 
+{
+    display: flex;
+    gap: 1.5rem;
+    font-size: 20px;
+
+    color: #a1a1aa;
+    text-decoration: none;
+}
+
+

@@ -5,31 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Meridian</title>
     <style>
-        body { font-family: sans-serif; margin: 2rem; }
+        /* body { font-family: sans-serif; margin: 2rem; }
         .ok { color: green; }
-        .error { color: red; }
+        .error { color: red; } */
     </style>
+    <link rel="stylesheet" href="styles/index.css">
+
 </head>
 <body>
-    <h1>Meridian</h1>
-    <p>API status: <span id="status">checking…</span></p>
+    <header class="site-header">
+        <a href="http://127.0.0.1:5500/repo/app/static/index.html" class="brand">
+            <img class="brand-icon" src="images/icons/globe.png" alt="" height="28px">
+            <span class="brand-name">Meridian</span>
+        </a>
+       <nav class="nav">
+            <a href="#alerts">Alerts</a>
+            <a href="#help">Help</a>
+            <a href="/docs">API docs</a>
+        </nav>
+
+        
+    </header>
+
+ 
 
     <script>
-        async function checkHealth() {
-            const el = document.getElementById("status");
-            try {
-                const res = await fetch("/health");
-                const data = await res.json();
-                el.textContent = `${data.status} (database: ${data.database})`;
-                el.className = res.ok ? "ok" : "error";
-            } catch (err) {
-                el.textContent = "API unreachable";
-                el.className = "error";
-            }
-        }
+        // async function checkHealth() {
+        //     const el = document.getElementById("status");
+        //     try {
+        //         const res = await fetch("/health");
+        //         const data = await res.json();
+        //         el.textContent = `${data.status}, Database: ${data.database}`;
+        //         el.className = res.ok ? "ok" : "error";
+        //     } catch (err) {
+        //         el.textContent = "API unreachable";
+        //         el.className = "error";
+        //     }
+        // }
 
-        checkHealth();
-        setInterval(checkHealth, 5000);
+        // document.getElementById("refresh").addEventListener("click", async () => {
+        //     const ul = document.getElementById("events");
+        //     ul.textContent = "button pressed";
+
+        //     const res = await fetch("/ingest", { method: "POST" });
+        //     const data = await res.json();
+
+        //     if (res.ok) {
+        //         ul.textContent = `${data.status}`;
+        //     } else {
+        //         const err = await res.json();
+        //         ul.textContent = `Error: ${err.detail}`;
+        //     }
+        // });
+
+        // checkHealth();
+        // setInterval(checkHealth, 5000);
+
+
+        // loadEvents();
+        // checkHealth();
+        // setInterval(checkHealth, 5000);
+    
+        
+    
     </script>
 </body>
 </html>
