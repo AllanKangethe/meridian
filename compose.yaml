@@ -10,7 +10,10 @@ services:
       - db
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-          - ./app:/app/app
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+
 
     environment:
       WATCHFILES_FORCE_POLLING: "true"

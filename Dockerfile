@@ -11,6 +11,9 @@ WORKDIR /app
 RUN useradd --create-home appuser
 COPY --from=builder /install /usr/local
 COPY app/ ./app/
+COPY alembic/ ./alembic/
+COPY alembic.ini .
+
 
 USER appuser
 EXPOSE 8000
