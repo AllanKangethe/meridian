@@ -51,6 +51,12 @@ p
     height: 35px;
 }
 
+.nav a
+{
+    color: #a1a1aa;
+    text-decoration: none;
+
+}
 .nav 
 {
     display: flex;
