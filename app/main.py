@@ -1,12 +1,10 @@
 import os
-
-from fastapi import FastAPI, Response
-from fastapi.staticfiles import StaticFiles
-
-from sqlalchemy import create_engine, text
-from fastapi import HTTPException
-
 import time
+
+from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import create_engine, text
+
 from app.worker import run_once
 
 
@@ -46,6 +44,36 @@ def trigger_ingest():
     except Exception:
         raise HTTPException(status_code=502, detail="Could not fetch from USGS")
     return {"status": "ingested"}
+
+@app.get("/events")
+def list_events(
+    limit: int = Query(100, ge=1, le=500),
+    lat: float | None = Query(None, ge=-90, le=90),
+    lon: float | None = Query(None, ge=-180, le=180),
+    radius_km: float = Query(500, gt=0, le=5000),):
+    sql = text("""
+        SELECT title, magnitude, occurred_at,
+               ST_Y(location::geometry) AS lat,
+               ST_X(location::geometry) AS lon
+        FROM events
+        WHERE CAST(:lat AS float) IS NULL
+                   OR ST_DWithin(
+                        location,
+                        ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography,
+                        :radius_km * 1000
+                      )
+        ORDER BY occurred_at DESC
+        LIMIT :limit
+    """)
+
+    params = {"limit": limit, "lat": lat, "lon": lon, "radius_km": radius_km}
+    with engine.connect() as conn:
+        rows = conn.execute(sql, params).mappings().all()
+    return [dict(r) for r in rows]
+
+
+
+
 
 
 app.mount("/", StaticFiles(directory="app/static", html=True), name="static")

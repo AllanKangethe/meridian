@@ -4,29 +4,60 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Meridian</title>
-    <style>
-        /* body { font-family: sans-serif; margin: 2rem; }
-        .ok { color: green; }
-        .error { color: red; } */
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Charis+SIL:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/index.css">
+
 
 </head>
 <body>
-    <header class="site-header">
-        <a href="http://localhost:8000" class="brand">
-            <img class="brand-icon" src="images/icons/globe.png" alt="" height="28px">
-            <span class="brand-name">Meridian</span>
-        </a>
-       <nav class="nav">
-            <a href="#alerts">Alerts</a>
-            <a href="#help">Help</a>
-            <a href="/docs">API docs</a>
-        </nav>
+    
+    <div class="brand">
+        <img src="images/icons/globe.png" style="height:25px;">
+        <p style="font-size:25px;">Meridian</p>
+    </div>
 
-        
-    </header>
+    <p style="
+        text-align:center;
+        color: var(--text);
+        font-size:30px;
+        margin: 0px;
+        cursor: default;">Where do you want to check?
+    </p>
 
+    <form id="search-form">
+        <label class="search">
+            <img class="search-icon" src="images/icons/search.png" alt="" width="18" height="18">
+            <input class="search-input" type="search" name="q" placeholder="City, country, or disaster type">
+        </label>
+    </form> 
+
+    <div class="dashboard">
+        <div class="dashboard-map">
+        </div>
+        <div class="dashboard-sidebar">
+             <p style="text-align: center;" id="search-status">Showing Results (0)</p>
+             <div class="chips">
+                <button class="chip active" data-type="all">All</button>
+                <button class="chip" data-type="earthquake">Earthquake</button>
+                <button class="chip" data-type="wildfire">Wildfire</button>
+                <!-- ... -->
+            </div>
+
+             
+            <ul id="results">
+                <p class="result">s</p>
+            </ul>
+
+        </div>
+
+    </div>
+   
+   
+
+
+    
  
 
     <script>
@@ -65,7 +96,70 @@
         // loadEvents();
         // checkHealth();
         // setInterval(checkHealth, 5000);
-    
+        
+        function renderEvent(e) {
+            const li = document.createElement("li");
+            li.className = "result";
+
+            const level = e.magnitude >= 6 ? "high" : e.magnitude >= 4.5 ? "moderate" : "low";
+
+            const badge = document.createElement("img");
+            badge.src= `images/badges/earthquake/earthquake-${level}.png`
+            badge.style = ` height: 30px; padding: 15px; background-color: var(--badge-${level}); border-radius: 20px;`
+
+            const title = document.createElement("p");
+            title.className = "result-title";
+            title.textContent = `M${e.magnitude?.toFixed(1)} earthquake`;
+
+            const sub = document.createElement("p");
+            sub.className = "result-sub";
+            const place = e.title.split(" - ")[1] ?? e.title;
+            sub.textContent = `${place} · ${new Date(e.occurred_at).toLocaleString()}`;
+
+            const text = document.createElement("div");
+            text.append(title, sub);
+            li.append(badge, text);
+            return li;
+        }
+
+        
+        
+        
+        
+        
+        document.getElementById("search-form").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const query = event.target.q.value.trim();
+            const status = document.getElementById("search-status");
+            const list = document.getElementById("results");
+            list.textContent = "";
+            
+            // 1. Place name -> coordinates
+            status.textContent = `Finding ${query}...`;
+            const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+            const geoRes = await fetch(geoUrl);
+            const places = await geoRes.json();
+            if (places.length === 0) {
+                status.textContent = `Couldn't find "${query}"`;
+                return;
+            }
+            const { lat, lon, display_name } = places[0];
+
+            // 2. Coordinates -> nearby events from YOUR API
+            const res = await fetch(`/events?lat=${lat}&lon=${lon}&radius_km=500`);
+            if (!res.ok) {
+                status.textContent = `Error loading events (${res.status})`;
+                return;
+            }
+            const events = await res.json();
+            status.textContent = `Showing Events (${events.length})`;
+
+            for (const e of events) {
+                list.appendChild(renderEvent(e));
+            }
+
+        });
+
         
     
     </script>
