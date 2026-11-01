@@ -182,3 +182,31 @@ p
 
 .chip:hover  { border-color: #a1a1aa; }
 .chip.active { background: var(--text); color: var(--bg); }
+
+.footer
+{
+    text-align: center;
+    color: #63636b;
+    margin-top: 1rem;
+    
+
+}
+
+.link 
+{
+    transition: color 2s;
+    color: #a0a0af;
+    text-decoration: none;
+
+}
+
+.link:hover
+{
+    color: rgb(153, 192, 192);
+}
+
+.link a
+{
+    text-decoration: none;
+    color: inherit;
+}
