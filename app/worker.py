@@ -7,6 +7,10 @@ from sqlalchemy import URL, create_engine, text
 import logging
 import time
 
+
+from pydantic import ValidationError
+from app.models import QuakeEvent
+
 FEED_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"
 HEADERS = {"User-Agent": "Meridian/0.1 (github.com/AllanKangethe)"}
 
@@ -47,27 +51,35 @@ def fetch_feed() -> dict:
     response.raise_for_status()
     return response.json()
 
-
-def store(features: list[dict]) -> None:
-    with engine.begin() as conn:
-        for f in features:
-            props = f["properties"]
-            lon, lat = f["geometry"]["coordinates"][:2]
-            conn.execute(UPSERT, {
-                "id": f["id"],
-                "type": props["type"],
-                "mag": props["mag"],
-                "title": props["title"],
-                "occurred_at": datetime.fromtimestamp(props["time"] / 1000, tz=timezone.utc),
-                "lon": lon,
-                "lat": lat,
-                "raw": json.dumps(f),
-            })
-
 def run_once() -> None:
     features = fetch_feed()["features"]
     store(features)
     log.info("Stored %d events", len(features))
+
+
+def store(features: list[dict]) -> None:
+    skipped = 0
+    with engine.begin() as conn:
+        for f in features:
+            try:
+                q = QuakeEvent.from_feature(f)
+            except ValidationError as err:
+                log.warning("Skipping bad record %s: %s", f.get("id"), err)
+                skipped += 1
+                continue
+            conn.execute(UPSERT, {
+                "id": q.id,
+                "type": q.type,
+                "mag": q.mag,
+                "title": q.title,
+                "occurred_at": q.time,
+                "lon": q.lon,
+                "lat": q.lat,
+                "raw": json.dumps(f),
+            })
+    if skipped:
+        log.warning("Skipped %d bad records", skipped)
+
 
 
 if __name__ == "__main__":
