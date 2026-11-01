@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Charis+SIL:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/index.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 
 </head>
@@ -34,8 +36,10 @@
     </form> 
 
     <div class="dashboard">
-        <div class="dashboard-map">
+        <div class="dashboard-map" id="map">
+
         </div>
+       
         <div class="dashboard-sidebar">
              <p style="text-align: center;" id="search-status">Showing Results (0)</p>
              <div class="chips">
@@ -47,7 +51,7 @@
 
              
             <ul id="results">
-                <p class="result">s</p>
+                <li class="result"></li>
             </ul>
 
         </div>
@@ -96,8 +100,67 @@
         // loadEvents();
         // checkHealth();
         // setInterval(checkHealth, 5000);
-        
+        async function loadEvents() {
+            const status = document.getElementById("search-status");
+            try {
+                const res = await fetch("/events");
+                if (!res.ok) {
+                    status.textContent = `Couldn't load events (${res.status})`;
+                    return;
+                }
+                showEvents(await res.json());
+            } catch (err) {
+                status.textContent = "Couldn't reach the server";
+            }
+        }
+
+        loadEvents();
+
+const map = L.map("map", {
+            minZoom: 2,
+            maxBounds: [[-85, -180], [85, 180]],
+            maxBoundsViscosity: 1.0,
+        }).setView([20, 0], 2);
+
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "&copy; OpenStreetMap contributors",
+            maxZoom: 19,
+        }).addTo(map);
+
+
+        const markers = L.layerGroup().addTo(map);
+
+        function drawEvents(events) {
+            markers.clearLayers();
+            for (const e of events) {
+                L.circleMarker([e.lat, e.lon], {
+                    radius: 3 + (e.magnitude ?? 0) * 1.5,
+                    color: e.magnitude >= 6 ? "#f87171" : e.magnitude >= 4.5 ? "#fbbf24" : "#4ade80",
+                    weight: 1,
+                    fillOpacity: 0.6,
+                })
+                .bindPopup(e.title)
+                .addTo(markers);
+            }
+        }
+
+
+        function showEvents(events) {
+            drawEvents(events);
+
+            const list = document.getElementById("results");
+            list.textContent = "";
+            for (const e of events) {
+                list.appendChild(renderEvent(e));
+            }
+            document.getElementById("search-status").textContent = `Showing Events (${events.length})`;
+        }
+
+        fetch("/events").then(res => res.json()).then(showEvents);
+
+
         function renderEvent(e) {
+            
             const li = document.createElement("li");
             li.className = "result";
 
@@ -136,26 +199,29 @@
             
             // 1. Place name -> coordinates
             status.textContent = `Finding ${query}...`;
-            const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
-            const geoRes = await fetch(geoUrl);
-            const places = await geoRes.json();
-            if (places.length === 0) {
-                status.textContent = `Couldn't find "${query}"`;
-                return;
-            }
-            const { lat, lon, display_name } = places[0];
+            try {
+                const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+                const geoRes = await fetch(geoUrl);
+                if (!geoRes.ok) {
+                    status.textContent = "Location search is unavailable right now";
+                    return;
+                }
+                const places = await geoRes.json();
+                if (places.length === 0) {
+                    status.textContent = `Couldn't find "${query}"`;
+                    return;
+                }
+                const { lat, lon } = places[0];
 
-            // 2. Coordinates -> nearby events from YOUR API
-            const res = await fetch(`/events?lat=${lat}&lon=${lon}&radius_km=500`);
-            if (!res.ok) {
-                status.textContent = `Error loading events (${res.status})`;
-                return;
-            }
-            const events = await res.json();
-            status.textContent = `Showing Events (${events.length})`;
-
-            for (const e of events) {
-                list.appendChild(renderEvent(e));
+                const res = await fetch(`/events?lat=${lat}&lon=${lon}&radius_km=500`);
+                if (!res.ok) {
+                    status.textContent = `Error loading events (${res.status})`;
+                    return;
+                }
+                map.flyTo([lat, lon], 6);
+                showEvents(await res.json());
+            } catch (err) {
+                status.textContent = "Search failed, check your connection and try again";
             }
 
         });
