@@ -13,6 +13,8 @@ services:
       - ./app:/app/app
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
+    restart: unless-stopped
+
 
 
     environment:
@@ -23,6 +25,8 @@ services:
     env_file: .env
     volumes:
       - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
 
   worker:
     build: .
@@ -32,7 +36,21 @@ services:
     command: python -m app.worker
     volumes:
       - ./app:/app/app
+    restart: unless-stopped
 
+  caddy:
+    image: caddy:2
+    profiles: ["prod"]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    depends_on:
+      - api
+    restart: unless-stopped
 
 volumes:
   pgdata:
+  caddy_data:
