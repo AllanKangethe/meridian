@@ -50,6 +50,8 @@
                 <!-- ... -->
             </div>
 
+            <button id="open-zones" class="chip zone-open">+ Watch zones</button>
+
              
             <ul id="results">
                 <li class="result"></li>
@@ -57,7 +59,29 @@
 
         </div>
 
+        
+
+
     </div>
+
+    <aside id="zone-panel" class="zone-panel" aria-hidden="true">
+        <div class="zone-panel-header">
+            <h2>Watch zones</h2>
+            <button id="close-zones" class="chip" aria-label="Close">✕</button>
+        </div>
+        <form id="zone-form" class="zone-form">
+            <label>Name <input name="name" required maxlength="100"></label>
+            <label>Latitude <input name="lat" type="number" step="any" min="-90" max="90" required></label>
+            <label>Longitude <input name="lon" type="number" step="any" min="-180" max="180" required></label>
+            <label>Radius (km) <input name="radius_km" type="number" step="any" min="1" max="2000" value="200" required></label>
+            <label>Min magnitude <input name="min_magnitude" type="number" step="0.1" min="0" max="10" value="0"></label>
+            <button type="submit" class="chip">Create zone</button>
+            <p id="zone-status"></p>
+        </form>
+        <ul id="zone-list"></ul>
+    </aside>
+
+    
 
     <p class="footer">Data: 
         USGS · 
@@ -234,6 +258,90 @@ const map = L.map("map", {
             }
 
         });
+
+        const zoneLayer = L.layerGroup().addTo(map);
+
+    async function loadZones() {
+        const res = await fetch("/watch-zones");
+        if (!res.ok) return;
+        const zones = await res.json();
+
+        const list = document.getElementById("zone-list");
+        list.textContent = "";
+        zoneLayer.clearLayers();
+
+        for (const z of zones) {
+            L.circle([z.lat, z.lon], { radius: z.radius_km * 1000, color: "#72e9c5", weight: 1, fillOpacity: 0.1 })
+                .addTo(zoneLayer);
+
+            const li = document.createElement("li");
+            li.textContent = `${z.name} · ${z.radius_km} km · M${z.min_magnitude}+ `;
+            const del = document.createElement("button");
+            del.textContent = "Delete";
+            del.addEventListener("click", async () => {
+                const r = await fetch(`/watch-zones/${z.id}`, { method: "DELETE" });
+                if (r.ok) loadZones();
+            });
+            li.appendChild(del);
+            list.appendChild(li);
+        }
+    }
+
+    document.getElementById("zone-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const status = document.getElementById("zone-status");
+        const data = Object.fromEntries(new FormData(event.target));
+        const body = {
+            name: data.name,
+            lat: Number(data.lat),
+            lon: Number(data.lon),
+            radius_km: Number(data.radius_km),
+            min_magnitude: Number(data.min_magnitude || 0),
+        };
+
+        try {
+            const res = await fetch("/watch-zones", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+            if (res.status === 201) {
+                status.textContent = "Zone created";
+                event.target.reset();
+                loadZones();
+            } else if (res.status === 422) {
+                const err = await res.json();
+                status.textContent = err.detail.map(d => `${d.loc.at(-1)}: ${d.msg}`).join(", ");
+            } else {
+                status.textContent = `Error (${res.status})`;
+            }
+        } catch {
+            status.textContent = "Couldn't reach the server";
+        }
+    });
+
+    loadZones();
+
+    const zonePanel = document.getElementById("zone-panel");
+
+    function setZonePanel(open) {
+        zonePanel.classList.toggle("open", open);
+        zonePanel.setAttribute("aria-hidden", String(!open));
+    }
+
+    document.getElementById("open-zones").addEventListener("click", () => setZonePanel(true));
+    document.getElementById("close-zones").addEventListener("click", () => setZonePanel(false));
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setZonePanel(false);
+    });
+
+    map.on("click", (e) => {
+        const form = document.getElementById("zone-form");
+        form.lat.value = e.latlng.lat.toFixed(4);
+        form.lon.value = e.latlng.lng.toFixed(4);
+        setZonePanel(true);
+    });
+
 
         
     

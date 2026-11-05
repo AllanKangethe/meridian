@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class QuakeEvent(BaseModel):
@@ -25,3 +25,11 @@ class QuakeEvent(BaseModel):
             lon=coords[0],
             lat=coords[1],
         )
+
+class WatchZoneCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    lat: float = Field(ge=-90, le=90)
+    lon: float = Field(ge=-180, le=180)
+    radius_km: float = Field(gt=0, le=2000)
+    min_magnitude: float = Field(default=0, ge=0, le=10)
+    webhook_url: HttpUrl | None = None
