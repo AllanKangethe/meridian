@@ -301,3 +301,98 @@ p
     font-size: 0.85rem;
     cursor: pointer;
 }
+
+/* ---- Phones and small tablets ---- */
+@media (max-width: 700px)
+{
+    body
+    {
+        padding: 0 16px;
+    }
+
+    .brand
+    {
+        margin-top: 24px;
+    }
+
+    /* the brand name and the title use inline font sizes in index.html,
+       so !important is needed to shrink them here */
+    .brand p
+    {
+        font-size: 1.3rem !important;
+    }
+
+    body > p:not(.footer)
+    {
+        font-size: 1.4rem !important;
+    }
+
+    .search
+    {
+        margin: 10px 0 16px 0;
+    }
+
+    /* 16px stops iPhones zooming in when the search box is tapped */
+    .search-input
+    {
+        font-size: 16px;
+    }
+
+    /* stack the map on top of the list instead of side by side */
+    .dashboard
+    {
+        flex-direction: column;
+        height: auto;
+        border-radius: 16px;
+    }
+
+    .dashboard-map
+    {
+        flex: none;
+        height: 45vh;
+    }
+
+    .dashboard-sidebar
+    {
+        flex: none;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        box-shadow: none;
+    }
+
+    #results
+    {
+        flex: none;
+        max-height: 55vh;
+    }
+
+    .chips
+    {
+        margin: 0 0.75rem 12px;
+        justify-content: center;
+    }
+
+    .chip
+    {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.9rem;
+    }
+
+    .result
+    {
+        padding: 0.6rem;
+    }
+
+    .zone-panel
+    {
+        width: 100%;
+        border-left: none;
+    }
+
+    .footer
+    {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        margin: 1rem 0 1.5rem;
+    }
+}
