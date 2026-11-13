@@ -1,7 +1,5 @@
 import json
 import os
-from datetime import datetime, timezone
-
 import httpx
 from sqlalchemy import URL, create_engine, text
 import logging
@@ -16,7 +14,11 @@ HEADERS = {"User-Agent": "Meridian/0.1 (github.com/AllanKangethe)"}
 
 POLL_SECONDS = 300
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S %Z",
+)
 log = logging.getLogger("worker")
 
 

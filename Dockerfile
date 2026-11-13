@@ -8,13 +8,13 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 FROM python:3.14-slim
 WORKDIR /app
 
-RUN useradd --create-home appuser
+RUN useradd --create-home app-user
 COPY --from=builder /install /usr/local
 COPY app/ ./app/
 COPY alembic/ ./alembic/
 COPY alembic.ini .
 
 
-USER appuser
+USER app-user
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

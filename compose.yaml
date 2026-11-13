@@ -3,6 +3,9 @@ name: meridian
 services:
   api:
     build: .
+    environment:
+      TZ: America/New_York
+      WATCHFILES_FORCE_POLLING: "true"
     ports:
       - "8000:8000"
     env_file: .env
@@ -14,22 +17,20 @@ services:
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
     restart: unless-stopped
-
-
-
-    environment:
-      WATCHFILES_FORCE_POLLING: "true"
+      
 
   db:
     image: postgis/postgis:17-3.5
     env_file: .env
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgressdata:/var/lib/postgresql/data
     restart: unless-stopped
 
 
   worker:
     build: .
+    environment:
+      TZ: America/New_York
     env_file: .env
     depends_on:
       - db
@@ -52,5 +53,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  pgdata:
+  postgressdata:
   caddy_data:
