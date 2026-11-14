@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, text
 
-from app.worker import run_once
+from app.worker import run_once_usgs
 from app.models import WatchZoneCreate
 
 
@@ -44,10 +44,12 @@ def trigger_ingest():
         raise HTTPException(status_code=429, detail="Ingest ran recently, try again shortly")
     _last_ingest = now
     try:
-        run_once()
+        run_once_usgs()
     except Exception:
         raise HTTPException(status_code=502, detail="Could not fetch from USGS")
     return {"status": "ingested"}
+
+
 
 @app.get("/events")
 def list_events(
@@ -61,7 +63,7 @@ def list_events(
     radius_km: float = Query(500, gt=0, le=5000),
 ):
     sql = text("""
-        SELECT id, event_type, title, magnitude, occurred_at,
+        SELECT id, event_type, title, magnitude, magnitude_unit, occurred_at,
                ST_Y(location::geometry) AS lat,
                ST_X(location::geometry) AS lon
         FROM events

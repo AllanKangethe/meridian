@@ -156,6 +156,17 @@ p
     font-weight: 600;
 }
 
+.event-badge
+{
+    width: 30px;
+    height: 30px;
+    padding: 15px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    object-fit: contain;
+}
+
+
 .badge.high     { background: #3f1d1d; color: #f87171; }
 .badge.moderate { background: #3b2a12; color: #fbbf24; }
 .badge.low      { background: #1a2e1a; color: #4ade80; }
