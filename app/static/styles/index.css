@@ -41,6 +41,15 @@ p
 
 }
 
+.brand a
+{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--text);
+}
+
 .search
 {
     display: flex;
@@ -325,6 +334,8 @@ p
     {
         margin-top: 24px;
     }
+
+
 
     /* the brand name and the title use inline font sizes in index.html,
        so !important is needed to shrink them here */
