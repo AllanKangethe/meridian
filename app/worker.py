@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from app.models import QuakeEvent, NaturalEvent
 
 FEED_URL_USGS = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"
-FEED_URL_EONET = "https://eonet.gsfc.nasa.gov/api/v3/events?days=1"
+FEED_URL_EONET = "https://eonet.gsfc.nasa.gov/api/v3/events?days=30"
 
 HEADERS = {"User-Agent": "Meridian/0.1 (github.com/AllanKangethe)"}
 
@@ -75,7 +75,7 @@ def fetch_feed(feed_url: str) -> dict:
 def run_once_usgs() -> None:
     features = fetch_feed(FEED_URL_USGS)["features"]
     store_usgs(features)
-    log.info("Stored %d events", len(features))
+    log.info("USGS: Stored %d events", len(features))
 
 
 def store_usgs(features: list[dict]) -> None:
@@ -99,16 +99,18 @@ def store_usgs(features: list[dict]) -> None:
                 "raw": json.dumps(f),
             })
     if skipped:
-        log.warning("Skipped %d bad records", skipped)
+        log.warning("USGS: skipped %d bad records", skipped)
 
 
 def run_once_eonet() -> None:
     events = fetch_feed(FEED_URL_EONET)['events']
     store_eonet(events)
-    log.info("Stored %d events", len(events))
+    log.info("EONET: Stored %d events", len(events))
 
 def store_eonet(events: list[dict]) -> None:
     skipped = 0
+    duplicates = 0
+
     with engine.begin() as conn:
             for e in events:
                 try:
@@ -117,6 +119,12 @@ def store_eonet(events: list[dict]) -> None:
                     log.warning("Skipping bad record %s: %s", e.get("id"), err)
                     skipped += 1
                     continue
+
+                if n.type == "earthquake":
+                    log.debug("Skipping EONET earthquake %s (USGS already covers quakes)", n.id)
+                    duplicates += 1
+                    continue
+                    
                 conn.execute(UPSERT_EONET, {
                     "id": n.id,
                     "type": n.type,
@@ -128,6 +136,10 @@ def store_eonet(events: list[dict]) -> None:
                     "lat": n.lat,
                     "raw": json.dumps(e),
                 })
+    if skipped:
+        log.warning("EONET: skipped %d bad records", skipped)
+    if duplicates:
+        log.info("EONET: skipped %d earthquakes (covered by USGS)", duplicates) 
 
 
 

@@ -4,13 +4,13 @@ from pydantic import BaseModel, Field, HttpUrl
 
 TYPE_MAP = {
     "wildfires": "wildfire", 
-    "severe storms": "storm", 
     "volcanoes": "volcano",
     "earthquakes": "earthquake",
     "floods": "flood",
     "landslides": "landslide",
     "severe storms": "severe storm",
-    "temperature extremes": "extreme temperatures"
+    "temperature extremes": "extreme temperatures",
+    "sea and lake ice": "ice"
     }
 
 

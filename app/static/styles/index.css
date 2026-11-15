@@ -173,6 +173,8 @@ p
     border-radius: 20px;
     flex-shrink: 0;
     object-fit: contain;
+
+    
 }
 
 
@@ -186,6 +188,7 @@ p
     flex-wrap: wrap;
     gap: 0.5rem;
     margin: 0 auto 20px auto;
+    padding: 0 0.75rem;
     justify-content: space-around;
 }
 
@@ -208,6 +211,7 @@ p
     text-align: center;
     color: #63636b;
     margin-top: 1rem;
+    cursor: default;
     
 
 }
@@ -235,6 +239,7 @@ p
 {
     align-self: center;
     margin-bottom: 1rem;
+    color: #a10aa7
 }
 
 .zone-panel

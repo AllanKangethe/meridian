@@ -1,9 +1,40 @@
+// What the user is currently filtering by
+const filters = { type: null, lat: null, lon: null };
+let search = "";
+
+function eventsUrl() {
+    const params = new URLSearchParams();
+
+    if (filters.type) params.set("type", filters.type);
+    if (filters.lat != null) {
+        params.set("lat", filters.lat);
+        params.set("lon", filters.lon);
+        params.set("radius_km", 500);
+        
+    }
+    return `/events?${params}`;
+}
+
+const chips = document.querySelectorAll(".chips .chip");
+
+chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+        chips.forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+
+        const type = chip.dataset.type;
+        filters.type = type === "all" ? null : type;
+        loadEvents();
+    });
+});
+
 
 // Load events from the server and display them on the map and in the list
 async function loadEvents() {
     const status = document.getElementById("search-status");
     try {
-        const res = await fetch("/events");
+        const res = await fetch(eventsUrl());
+
         if (!res.ok) {
             status.textContent = `Couldn't load events (${res.status})`;
             return;
@@ -20,8 +51,9 @@ loadEvents();
 // Initialize the map
 const map = L.map("map", {
     minZoom: 2,
-    maxBounds: [[-85, -180], [85, 180]],
+    maxBounds: [[-85, -Infinity], [85, Infinity]],
     maxBoundsViscosity: 1.0,
+    worldCopyJump: true,
 }).setView([20, 0], 2);
 
 // Add OpenStreetMap tile layer
@@ -97,8 +129,8 @@ function showEvents(events) {
     document.getElementById("search-status").textContent = `Showing Events (${events.length})`;
 }
 
-// Load events from the server and display them on the map and in the list
-fetch("/events").then(res => res.json()).then(showEvents);
+
+const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
 
 // Lists events in the sidebar
 function renderEvent(e) 
@@ -106,24 +138,27 @@ function renderEvent(e)
         
     const li = document.createElement("li");
     li.className = "result";
+    li.addEventListener("click", () => {
+        map.flyTo([e.lat, e.lon], 8);
+    });
 
     const level = severity(e);
 
 
     const badge = document.createElement("img");
     badge.src= `images/badges/${e.event_type}/${e.event_type}-${level}.png`
-    badge.style = ` height: 30px; padding: 15px; background-color: var(--badge-${level}); border-radius: 20px;`
+    badge.className = "event-badge";
+    badge.style.backgroundColor = `var(--badge-${level})`;
+
 
     const title = document.createElement("p");
     title.className = "result-title";
     if (e.event_type === "earthquake") {
-        title.textContent = `M ${e.magnitude?.toFixed(1)} Earthquake`;
-    }
-    else
-    {
-        title.textContent = `${e.magnitude?.toFixed(0)}
-            ${e.magnitude_unit.charAt(0).toUpperCase() + e.magnitude_unit.slice(1)} 
-            ${e.event_type.charAt(0).toUpperCase() + e.event_type.slice(1)}`;
+        title.textContent = `M ${e.magnitude?.toFixed(1) ?? "?"} Earthquake`;
+    } else {
+        const size = e.magnitude != null ? `${Math.round(e.magnitude)} ` : "";
+        const unit = e.magnitude_unit ? `${capitalize(e.magnitude_unit)} ` : "";
+        title.textContent = `${size}${unit}${capitalize(e.event_type)}`;
     }
 
     const sub = document.createElement("p");
@@ -145,6 +180,17 @@ function renderEvent(e)
 document.getElementById("search-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const query = event.target.q.value.trim();
+
+    // Empty search: back to the whole world
+    if (!query) {
+        filters.lat = null;
+        filters.lon = null;
+        map.setView([20, 0], 2);
+        await loadEvents();
+        return;
+    }
+    
+
     const status = document.getElementById("search-status");
     const list = document.getElementById("results");
     list.textContent = "";
@@ -152,7 +198,7 @@ document.getElementById("search-form").addEventListener("submit", async (event) 
     // 1. Place name -> coordinates
     status.textContent = `Finding ${query}...`;
     try {
-        const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+        const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=en&q=${encodeURIComponent(query)}`;
         const geoRes = await fetch(geoUrl);
         if (!geoRes.ok) {
             status.textContent = "Location search is unavailable right now";
@@ -163,17 +209,12 @@ document.getElementById("search-form").addEventListener("submit", async (event) 
             status.textContent = `Couldn't find "${query}"`;
             return;
         }
+
         const { lat, lon } = places[0];
-
-        console.log(places[0]);
-
-        const res = await fetch(`/events?lat=${lat}&lon=${lon}&radius_km=500`);
-        if (!res.ok) {
-            status.textContent = `Error loading events (${res.status})`;
-            return;
-        }
+        filters.lat = lat;
+        filters.lon = lon;
         map.flyTo([lat, lon], 6);
-        showEvents(await res.json());
+        await loadEvents();
     } catch (err) {
         status.textContent = "Search failed, check your connection and try again";
     }
@@ -192,7 +233,7 @@ async function loadZones() {
     zoneLayer.clearLayers();
 
     for (const z of zones) {
-        L.circle([z.lat, z.lon], { radius: z.radius_km * 1000, color: "#72e9c5", weight: 1, fillOpacity: 0.1 })
+        L.circle([z.lat, z.lon], { radius: z.radius_km * 1000, color: "#a10aa7", weight: 1, fillOpacity: 0.1 })
             .addTo(zoneLayer);
 
         const li = document.createElement("li");

@@ -1,6 +1,5 @@
 import os
-import time
-from datetime import datetime  # add to the imports at the top
+from datetime import datetime 
 
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.staticfiles import StaticFiles
@@ -36,27 +35,13 @@ def health(response: Response):
     return {"status": "ok", "database": "ok"}
 
 
-@app.post("/ingest", status_code=202)
-def trigger_ingest():
-    global _last_ingest
-    now = time.monotonic()
-    if now - _last_ingest < COOLDOWN_SECONDS:
-        raise HTTPException(status_code=429, detail="Ingest ran recently, try again shortly")
-    _last_ingest = now
-    try:
-        run_once_usgs()
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not fetch from USGS")
-    return {"status": "ingested"}
-
-
 
 @app.get("/events")
 def list_events(
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     type: str | None = Query(None, max_length=50),
-    min_mag: float | None = Query(None, ge=-2, le=10),
+    min_mag: float | None = Query(None, ge=-2, le=10, description="Earthquake magnitude (USGS events only)"),
     since: datetime | None = None,
     lat: float | None = Query(None, ge=-90, le=90),
     lon: float | None = Query(None, ge=-180, le=180),
@@ -68,7 +53,7 @@ def list_events(
                ST_X(location::geometry) AS lon
         FROM events
         WHERE (CAST(:type AS text) IS NULL OR event_type = :type)
-          AND (CAST(:min_mag AS float) IS NULL OR magnitude >= :min_mag)
+          AND (CAST(:min_mag AS float) IS NULL OR source <> 'usgs' OR magnitude >= :min_mag)
           AND (CAST(:since AS timestamptz) IS NULL OR occurred_at >= :since)
           AND (CAST(:lat AS float) IS NULL OR ST_DWithin(
                 location,
