@@ -56,6 +56,9 @@ const map = L.map("map", {
     worldCopyJump: true,
 }).setView([20, 0], 2);
 
+map.attributionControl.setPrefix(false);
+
+
 // Add OpenStreetMap tile layer
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors",
