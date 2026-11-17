@@ -16,6 +16,9 @@ HEADERS = {"User-Agent": "Meridian/0.1 (github.com/AllanKangethe)"}
 
 POLL_SECONDS = 300
 
+USGS_IGNORE = {"quarry blast", "landslide"}  # ignores these events
+
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
@@ -78,8 +81,11 @@ def run_once_usgs() -> None:
     log.info("USGS: Stored %d events", len(features))
 
 
+
 def store_usgs(features: list[dict]) -> None:
     skipped = 0
+    ignored = 0
+
     with engine.begin() as conn:
         for f in features:
             try:
@@ -88,6 +94,13 @@ def store_usgs(features: list[dict]) -> None:
                 log.warning("Skipping bad record %s: %s", f.get("id"), err)
                 skipped += 1
                 continue
+
+            if q.type in USGS_IGNORE:
+                log.debug("Ignoring USGS %s %s", q.type, q.id)
+                ignored += 1
+                continue
+
+            
             conn.execute(UPSERT_USGS, {
                 "id": q.id,
                 "type": q.type,
@@ -100,6 +113,9 @@ def store_usgs(features: list[dict]) -> None:
             })
     if skipped:
         log.warning("USGS: skipped %d bad records", skipped)
+    if ignored:
+        log.info("USGS: ignored %d events (%s)", ignored, ", ".join(sorted(USGS_IGNORE)))
+
 
 
 def run_once_eonet() -> None:
