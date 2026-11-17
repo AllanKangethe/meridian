@@ -16,7 +16,7 @@ HEADERS = {"User-Agent": "Meridian/0.1 (github.com/AllanKangethe)"}
 
 POLL_SECONDS = 300
 
-USGS_IGNORE = {"quarry blast", "landslide"}  # ignores these events
+USGS_IGNORE = {"quarry blast", "landslide", "explosion"}  # ignores these  events
 
 
 logging.basicConfig(
